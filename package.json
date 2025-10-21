@@ -10,6 +10,7 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@directus/sdk": "^20.1.0",
     "@microsoft/clarity": "^1.0.0",
     "@nuxt/image": "^1.10.0",
     "@nuxtjs/i18n": "^9.4.0",
