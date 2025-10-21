@@ -9,6 +9,7 @@
 		"
 	>
 
+
 		<!--cart and products --->
 		<div
 			class="
@@ -114,6 +115,9 @@ import SummaryComponent from '../components/cart/summary.vue'
 import CurrencySelector from '../components/currencySelector'
 import emptyCart from '../components/cart/emptyCart.vue';
 
+const { $directus, $readItem, $readItems } = useNuxtApp()
+
+
 
 const { t } = useI18n()
 const router = useRouter()
@@ -151,6 +155,9 @@ const productData = await useAsyncData( 'product',
 )
 product.value = productData.data.value
 
+
+
+
 const showCart = computed(() => cartState?.value?.products?.length || false )
 
 const disableContinue = computed(() => {
@@ -163,9 +170,22 @@ const disableContinue = computed(() => {
 
 const checkoutPath = getPath('icommerce.checkout')
 
-onMounted(() => {
+onMounted(() => {	
 	restoreFromCheckout()
+	directusTest()
 })
+
+async function directusTest(){
+	const categories  = await $directus.request($readItems('products', {
+		fields: [
+			'*',  { 
+				categories: ['*'] 
+			}
+		]
+	})
+);
+	console.log(categories)
+}
 
 function restoreFromCheckout(){
 	if(isAddAction.value){

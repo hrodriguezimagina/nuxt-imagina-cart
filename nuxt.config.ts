@@ -63,8 +63,8 @@ export default defineNuxtConfig({
     public: {
       apiRoute: process.env.API_ROUTE || '', 
       clarityId: process.env.CLARITY_ID || '',
-      ipWhiteList: process.env.IP_WHITELIST || null,
-      ipVerify: process.env.IP_VERIFY || null
+      directusAPI: process.env.DIRECTUS_API || '', 
+      directusToken: process.env.DIRECTUS_TOKEN || ''
     }
   },
 
@@ -74,16 +74,7 @@ export default defineNuxtConfig({
     }
   },
 
-  /*
-  security: {
-    rateLimiter: {
-      whiteList: process.env.IP_WHITELIST
-    }
-  },
-  */
-
-
-
+  
 
   /* qusasar */
   quasar: {
