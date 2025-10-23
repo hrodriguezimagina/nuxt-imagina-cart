@@ -41,7 +41,7 @@
             "
             >
             <span style="word-break: break-word;">
-              {{  product?.domain?.domainName }}
+              {{  product?.domain?.domainName }} 
             </span>
           </span>
         </div>
@@ -66,7 +66,7 @@
         "
       >
         <span>
-          {{ product.name}}
+          {{ product.name}} {{ product.externalId }}
         </span>
 
       </div>
@@ -571,22 +571,21 @@ async function init() {
   if(urlOptions.pid && urlOptions.action == 'add'){
     const product  = props.product
 
-    if(productsHelper.hasFrencuency(product)){
-				let billingcycle = 0
-
-				const options = productsHelper.getFrecuencyOptions(product).map((element, index) => {
-					if(urlOptions?.billingcycle){
-						const tempBillingcycle = Array.isArray(urlOptions.billingcycle) ? urlOptions.billingcycle[urlOptions.billingcycle.length-1 ] : urlOptions.billingcycle
-						if(tempBillingcycle.toLowerCase() == element.label.toLowerCase()){
-							billingcycle = index
-						}
-					}
-					element.frecuency = element.label
-					element.label =  t(productsHelper.translateFrecuencyOptionLabel(element.label))
-					return element
-        });
-				if(options.length) product.frecuency = options[billingcycle]
+    if(product.frecuencies.length){     
+			let frecuency	= product.frecuencies[0]
+      console.log(frecuency)
+          
+        if(urlOptions?.billingcycle){						
+          const tempBillingcycle = Array.isArray(urlOptions.billingcycle) ? urlOptions.billingcycle[urlOptions.billingcycle.length-1 ] : urlOptions.billingcycle
+          frecuency = product.frecuencies.find(x => x['frecuency_id'].name == tempBillingcycle)
+        }
+        
+        product.frecuency = {
+          value: frecuency['frecuency_id'].duration,
+          label: frecuency['frecuency_id'].label
+        }
     }
+    
     cartState.value.products = []
     cartState.value.products.push(product)
 
@@ -714,7 +713,7 @@ async function updateDomainPrice(){
   cartState.value.products.forEach((product) => {
 
     if(mainDomain.value){
-      const tempfrecuency = getFrecuencyOptions(mainDomain.value).find(x => x.frecuency == mainProduct.value.frecuency.frecuency) || false
+      const tempfrecuency = mainDomain.value.frecuencies.find(x => x.frecuency == mainProduct.value.frecuency.frecuency) || false
       if(tempfrecuency){
         if(getFrecuencyFromLabel(tempfrecuency.label) >= 12 ){
           mainDomain.value.frecuency = tempfrecuency
@@ -895,13 +894,16 @@ async function checkDomain(product) {
 }
 
 function getFrecuencyOptions(product){
+  
   if(product?.frecuencyOptions?.length) return product?.frecuencyOptions
 
-  const options = productsHelper.getFrecuencyOptions(product).map(element => {
-      element.frecuency = element.label
-      element.label = t(productsHelper.translateFrecuencyOptionLabel(element.label))
-      return element
-  });
+  const options  = product.frecuencies.map((frecuency) => {
+    const frecuencyId = frecuency['frecuency_id']
+    return { 
+      value: frecuencyId.duration,      
+      ...frecuencyId      
+    }
+  })
 
   /*sort the options by number of months */
   const sorted = options.sort((a, b) => {
@@ -917,8 +919,9 @@ function getFrecuencyFromLabel(label){
   return parseInt(label.match(/\d+/)[0], 10)
 }
 
-function calcRenovationDate(label){
-  const months = getFrecuencyFromLabel(label)
+function calcRenovationDate(frecuency){
+  console.log('=>>>', frecuency)
+  const months = frecuency.duration
   return moment().add(months, 'months').format('DD/MM/YYYY')
 }
 
@@ -930,9 +933,9 @@ function getDiscount(product){
     value: 0
   }
 
-  const months = getFrecuencyFromLabel(product.frecuency.label)
-  const monthlyPrice = getFrecuencyOptions(product).find(x => x.frecuency == 'Monthly') ||  getFrecuencyOptions(product)[0]
-  const priceByMonths = product?.category ? monthlyPrice.value * months : monthlyPrice.value
+  const months = product.frecuency.months
+  const monthlyPrice = product.frecuencies.find(x => x.name == 'monthly') ||  product.frecuencies[0]
+  const priceByMonths = product?.category ? monthlyPrice.price * months : monthlyPrice.price
   const value = product?.category ? (priceByMonths - product.frecuency.value) : 0
   const percent = product?.category ?  Math.round((value / priceByMonths) * 100) : 0;
 
@@ -1091,7 +1094,7 @@ function getRenewLabel(product){
   }
 
   const price = prices[product.id] || product.price
-  return `Renuevas a ${productsHelper.valueWithSymbol(price, cartState.currency)} el  ${ calcRenovationDate(product.frecuency.label) } ¡Cancela cuando quieras!`
+  return `Renuevas a ${productsHelper.valueWithSymbol(price, cartState.currency)} el  ${ calcRenovationDate(product.frecuency) } ¡Cancela cuando quieras!`
 }
 
 </script>
