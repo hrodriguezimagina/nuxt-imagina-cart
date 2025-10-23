@@ -115,7 +115,8 @@ import SummaryComponent from '../components/cart/summary.vue'
 import CurrencySelector from '../components/currencySelector'
 import emptyCart from '../components/cart/emptyCart.vue';
 
-const { $directus, $readItem, $readItems } = useNuxtApp()
+
+
 
 
 
@@ -171,21 +172,8 @@ const disableContinue = computed(() => {
 const checkoutPath = getPath('icommerce.checkout')
 
 onMounted(() => {	
-	restoreFromCheckout()
-	directusTest()
+	restoreFromCheckout()	
 })
-
-async function directusTest(){
-	const categories  = await $directus.request($readItems('products', {
-		fields: [
-			'*',  { 
-				categories: ['*'] 
-			}
-		]
-	})
-);
-	console.log(categories)
-}
 
 function restoreFromCheckout(){
 	if(isAddAction.value){

@@ -1,31 +1,19 @@
-import apiRoutes from "~/modules/icommerce/config/apiRoutes";
+
+
+import { useProducts } from '../../utils/directus';
 
 export default defineCachedEventHandler(async (event) => {
+  //const { getProductByExtertnalProductId, getProducts } = useProducts();
     const queries = getQuery(event)    
     if(!queries?.pid) return null
 
-    const config = useRuntimeConfig()
-    const apiRoute = `${config.public.apiRoute}/api`    
-
-    let api = `${apiRoute}${apiRoutes.products}/${queries.pid}`   
-    const params = {
-		include: 'relatedProducts,categories,category,parent,manufacturer,optionsPivot.option,optionsPivot.productOptionValues',
-		filter: {
-			field: 'external_id'
-		}		
-	}
-    
-    
-    const data = await $fetch(`${api}`, {
-        params: params
-    }).then(response => {
-        return response?.data || null
-    })    
-    return data;
+    const data = await useProducts().getProductByPID(queries.pid) || null
+    console.log(data)
+    return data
   }, {
     group: 'icommerce',
     name: 'product',    
-    maxAge: 360 * 12,  //minimun time,
+    //maxAge: 360 * 12,  //minimun time,
     //staleMaxAge: -1, // sent to the client while the cache updates in the background.
     //swr: false
     getKey: (event) =>  `${getQuery(event)?.pid}`
