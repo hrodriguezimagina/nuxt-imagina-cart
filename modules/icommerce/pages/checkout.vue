@@ -468,9 +468,6 @@ function getField(name) {
 	return null
 }
 
-function calcDiscount(){
-  return productsHelper.calcDiscount(cartState.value.products, subtotal.value)
-}
 
 function redirectToCart() {
 	router.push({

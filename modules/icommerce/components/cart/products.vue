@@ -237,7 +237,7 @@
 
     <!-- domain check -->
     <div
-      v-if="isDomainNameRequired(mainProduct) && showDomainSearch"
+      v-if="mainProduct.frecuencies.length && isDomainNameRequired(mainProduct) && showDomainSearch"
       class="
       tw-bg-white
         tw-border-[1px]
@@ -754,11 +754,11 @@ async function updateDomainPrice(){
 
 
       if(isDomainNameRequired(product)){
-        const frecuency = product.frecuency.duration
+        const frecuency = product?.frecuency?.duration || 0
 
         //free domain afther 12 months
         if(isDomainNameFree(mainProduct) ){
-          product.price = product.frecuency.price
+          product.price = product?.frecuency?.price || 0
         } else {
           let renewPrice = 0
           //aplly renew
@@ -908,10 +908,14 @@ function getDiscount(product){
     value: 0
   }
 
+  const frecuencyPrice = product?.frecuency ? product.frecuency?.price : 0
+  
   const months = product?.frecuency?.duration || 0
+  
   const monthlyPrice = product.frecuencies.find(x => x.name == 'monthly') ||  product.frecuencies[0] || {price: 0}
+
   const priceByMonths = product?.category ? monthlyPrice.price * months : monthlyPrice.price
-  const value = product?.category ? (priceByMonths - product.frecuency.value) : 0
+  const value = product?.category ? (priceByMonths - frecuencyPrice) : 0
   const percent = product?.category ?  Math.round((value / priceByMonths) * 100) : 0;
 
   product.discount  = {

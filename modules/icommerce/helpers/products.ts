@@ -155,12 +155,13 @@ const helper = {
 
 		let total = Number(0)
 		let totalNoDiscount = Number(0)
-		let percent = 0
+		let percent = 0		
 
 		products.forEach(product => {
+			const frecuencyPrice = product?.frecuency ? product.frecuency.price : 0
 
 			if(product?.category){
-				totalNoDiscount = Number(totalNoDiscount) + Number(product?.discount?.priceByMonths || 0) + (product.price - product.frecuency.price)
+				totalNoDiscount = Number(totalNoDiscount) + Number(product?.discount?.priceByMonths || 0) + (product.price - frecuencyPrice)
 			} else {
 				totalNoDiscount = Number(totalNoDiscount) + product.price
 			}
