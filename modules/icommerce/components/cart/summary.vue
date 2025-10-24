@@ -52,7 +52,6 @@
 			tw-p-0
 			tw-leading-5
 		">
-
 			<span :class="calcDiscount().percent ? 'tw-line-through tw-text-[#818181] tw-font-[400]' : '' ">
 				{{ productsHelper.priceWithSymbol(calcDiscount().totalNoDiscount, cartState.currency) }}
 			</span>

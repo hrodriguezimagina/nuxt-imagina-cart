@@ -48,7 +48,7 @@
 
         <!-- delete button -->
         <q-btn
-          v-if="!product?.categories"
+          v-if="index != 0"
           icon="fa-regular fa-trash-can"
           text-color="primary"
           size="sm"
@@ -66,13 +66,13 @@
         "
       >
         <span>
-          {{ product.title}} :  {{ product.pid }}
+          {{ product.title}}
         </span>
 
       </div>
       <!-- category -->
       <div
-        v-if="product?.categories"
+        v-if="product?.category"
         class="
           tw-flex
           tw-justify-between
@@ -80,7 +80,7 @@
         "
       >
         <span class="tw-text-[18px] tw-text-[#818181]">
-          {{ product.categories[0].title}}
+          {{ product.category.title}} : {{ product.category.id}}
         </span>
       </div>
       <q-separator
@@ -99,10 +99,10 @@
         <div>
 
           <q-select
-            v-if="productsHelper.hasFrencuency(product) || product?.frecuency"
+            v-if="product.frecuencies.length"
             v-model="product.frecuency"
             :disable="index == 1"
-            :options="getFrecuencyOptions(product)"
+            :options="product.frecuencies"
             @update:model-value="updateDomainPrice()"
             option-value="value"
             option-label="label"
@@ -174,14 +174,14 @@
               :class="isMainDomainFree(index) ? 'tw-border-green-400' : 'tw-border-[#00000033]'"
             >
               <span
-                v-if="isMainDomainFree(index) && getFrecuencyFromLabel(mainProduct?.frecuency.label) == 12"
+                v-if="isMainDomainFree(index) && (mainProduct?.frecuency?.duration == 12)"
                 class="tw-mx-2 tw-text-[15px] tw-font-[600]"
               >
                 ¡Obtienes 1 año gratis!
               </span>
 
               <span
-                v-if="isMainDomainFree(index) && getFrecuencyFromLabel(mainProduct?.frecuency.label) > 12"
+                v-if="isMainDomainFree(index) && (mainProduct?.frecuency?.duration > 12)"
                 class="tw-mx-2 tw-text-[15px] tw-font-[600]"
               >
                 ¡Obtienes {{ mainProduct?.frecuency.label }} gratis!
@@ -567,30 +567,36 @@ init()
 onMounted(() => {
 })
 
-async function init() {
-  if(urlOptions.pid && urlOptions.action == 'add'){
-    const product  = props.product
 
-    if(product.frecuencies.length){     
-			let frecuency	= product.frecuencies[0]
-      console.log(frecuency)
-          
-        if(urlOptions?.billingcycle){						
-          const tempBillingcycle = Array.isArray(urlOptions.billingcycle) ? urlOptions.billingcycle[urlOptions.billingcycle.length-1 ] : urlOptions.billingcycle
-          frecuency = product.frecuencies.find(x => x['frecuency_id'].name == tempBillingcycle)
-        }
-        
-        product.frecuency = {
-          value: frecuency['frecuency_id'].duration,
-          label: frecuency['frecuency_id'].label
-        }
+
+function setFrecuency(frecuencies){  
+  if(!frecuencies.length) return null     
+
+  let frecuency = frecuencies[0] 
+  if(urlOptions?.billingcycle){						
+    const tempBillingcycle = Array.isArray(urlOptions.billingcycle) ? urlOptions.billingcycle[urlOptions.billingcycle.length-1 ] : urlOptions.billingcycle
+    frecuency = frecuencies.find(x => x.name == tempBillingcycle) || frecuencies[0]
+  }  
+  return frecuency
+}
+
+async function setProduct(){
+  if(urlOptions.pid && urlOptions.action == 'add'){
+    let product  = props.product    
+    if(product.frecuencies.length){
+      product.frecuency = setFrecuency(product.frecuencies)
     }
-    
     cartState.value.products = []
     cartState.value.products.push(product)
 
+    configProducts()
   }
-  await configProducts()
+}
+
+
+
+async function init() {  
+  setProduct()
 }
 
 async function loadDomainSearch(){
@@ -632,26 +638,8 @@ function getExtPrice(ext){
 async function configProducts() {
   try {
     cartState.value.products.forEach((product) => {
-      product.price = product?.price || product.frecuency.price
-     
-     
-      if (product.frecuencies) {
-        
-
-         const options  = product.frecuencies.map((frecuency) => {
-          const frecuencyId = frecuency['frecuency_id']
-          return { 
-            value: frecuencyId.duration,      
-            ...frecuencyId      
-          }
-        })
-
-
-        if (options.length && !product?.frecuency) {
-          product.frecuency = options[0]
-        }
-      }
-
+      product.price = product?.price || product?.frecuency?.price || 0
+      
       if (isDomainNameRequired(product)) {
 
         if(!product?.domain?.domainName) {
@@ -724,13 +712,13 @@ async function updateDomainPrice(){
   cartState.value.products.forEach((product) => {
 
     if(mainDomain.value){
-      const tempfrecuency = mainDomain.value.frecuencies.find(x => x.frecuency == mainProduct.value.frecuency.frecuency) || false
+      const tempfrecuency = mainDomain.value.frecuencies.find(x => x.name == mainProduct.value.frecuency.name) || false
       if(tempfrecuency){
-        if(getFrecuencyFromLabel(tempfrecuency.label) >= 12 ){
+        if(tempfrecuency.duration >= 12 ){
           mainDomain.value.frecuency = tempfrecuency
         }
       } else {
-        mainDomain.value.frecuency = getFrecuencyOptions(mainDomain.value)[0]
+        mainDomain.value.frecuency = mainProduct.value.frecuencies[0]
       }
     }
 
@@ -741,7 +729,7 @@ async function updateDomainPrice(){
       }
     }
 
-    product.price = product.frecuency.value //update with frecuency
+    product.price =  product?.frecuency ? product?.frecuency?.price : product.price || 0  //update with frecuency
 
     let domainPrice = {
       domainrenew: 0,
@@ -766,11 +754,11 @@ async function updateDomainPrice(){
 
 
       if(isDomainNameRequired(product)){
-        const frecuency = getFrecuencyFromLabel(product.frecuency.label)
+        const frecuency = product.frecuency.duration
 
         //free domain afther 12 months
         if(isDomainNameFree(mainProduct) ){
-          product.price = product.frecuency.value
+          product.price = product.frecuency.price
         } else {
           let renewPrice = 0
           //aplly renew
@@ -793,14 +781,12 @@ function extractDomainExtension(url) {
   return match ? match[1].toLowerCase() : null;
 }
 
-function isDomainNameRequired(product) {
-  const domainCategories = constants.categories.domainNameRequired
-  return domainCategories.includes(product?.category?.id) || false
+function isDomainNameRequired(product) {  
+  return product?.category?.domainRequired || false
 }
 
 function isDomainNameFree(product) {
-  const domainCategories = constants.categories.dominNameFree
-  return domainCategories.includes(product?.category?.id) || false
+  return product?.category?.domainFree || false
 }
 
 function freeDomainLabel(idx){
@@ -811,7 +797,7 @@ function isFreeExtension(){
 
   if(!isDomainNameFree(mainProduct.value))  return false
   if(!mainProduct.value?.frecuency) return false
-  const frecuency = getFrecuencyFromLabel(mainProduct.value?.frecuency.label) >= 12 || false
+  const frecuency = mainProduct.value?.frecuency.duration >= 12 || false
   return constants.freeExtensions.includes(mainDomain.value?.domain.ext) && frecuency || false
 }
 
@@ -821,7 +807,7 @@ function isMainDomainFree(idx){
 
 function isTweelveMonths(){
   if(!mainProduct.value?.frecuency) return false
-  return getFrecuencyFromLabel(mainProduct.value?.frecuency.label) >= 12 || false
+  return mainProduct.value?.frecuency.duration >= 12 || false
 }
 
 function isAfreeResult(ext){
@@ -904,27 +890,6 @@ async function checkDomain(product) {
   token.value = null
 }
 
-function getFrecuencyOptions(product){
-  
-  if(product?.frecuencyOptions?.length) return product?.frecuencyOptions
-
-  const options  = product.frecuencies.map((frecuency) => {
-    const frecuencyId = frecuency['frecuency_id']
-    return { 
-      value: frecuencyId.duration,      
-      ...frecuencyId      
-    }
-  })
-
-  /*sort the options by number of months */
-  const sorted = options.sort((a, b) => {
-    const numA = parseInt(a.label.match(/\d+/)[0], 10);
-    const numB = parseInt(b.label.match(/\d+/)[0], 10);
-    return numA - numB;
-  });
-
-  return sorted
-}
 
 function getFrecuencyFromLabel(label){
   return parseInt(label.match(/\d+/)[0], 10)
@@ -943,8 +908,8 @@ function getDiscount(product){
     value: 0
   }
 
-  const months = product.frecuency.months
-  const monthlyPrice = product.frecuencies.find(x => x.name == 'monthly') ||  product.frecuencies[0]
+  const months = product?.frecuency?.duration || 0
+  const monthlyPrice = product.frecuencies.find(x => x.name == 'monthly') ||  product.frecuencies[0] || {price: 0}
   const priceByMonths = product?.category ? monthlyPrice.price * months : monthlyPrice.price
   const value = product?.category ? (priceByMonths - product.frecuency.value) : 0
   const percent = product?.category ?  Math.round((value / priceByMonths) * 100) : 0;
@@ -993,8 +958,7 @@ async function addDomainExtension(extension){
   const isAvailable = await verifySuggestion(extension.name)
 
   if(isAvailable){
-    const cloned = {}// _.clone(product)
-    cloned.optionsPivot = _.clone(mainProduct.value.optionsPivot)
+    const cloned = {}// _.clone(product)    
     cloned.frecuency = _.clone(mainProduct.value.frecuency)
 
     cloned.id = extension.name
@@ -1018,31 +982,32 @@ async function addDomainExtension(extension){
     cloned.domain.price = getExtPrice(extension.ext)?.domainregister || 0
     cloned.domain.ext = extension.ext
 
-    cloned.frecuencyOptions = null
-    const frecuencyOptions = _.clone(getFrecuencyOptions(mainProduct.value));
+    
+    const frecuencyOptions = _.clone(mainProduct.value.frecuencies);
 
     //map new frecuency values for aditional domain
-    cloned.frecuencyOptions = frecuencyOptions.map(element => {
-      const frecuency = getFrecuencyFromLabel(element.label)
+    cloned.frecuencies = frecuencyOptions.map(element => {
+      const frecuency = element.duration
       let renewPrice = 0
       if(frecuency > 12){
         const years = ( frecuency / 12) - 1 //renovation per year - first year
         renewPrice = getExtPrice(extension.ext)?.domainrenew * years
       }
-      return {
-        enable: (frecuency >= 12),
+      return {        
         //id: frecuency,
+        name: element.name,
         label: element.label,
-        frecuency: element.frecuency,
-        value: cloned.domain.price + renewPrice
+        duration: element.duration,
+        price: cloned.domain.price + renewPrice
       }
     })
 
-    cloned.frecuencyOptions = cloned.frecuencyOptions.filter(x => x.enable) //remove options lower than 12 months
+    cloned.frecuencies = cloned.frecuencies.filter(x => x.duration >= 12) //remove options lower than 12 months
 
-    let selectedFrecuency = cloned.frecuencyOptions.find(x => x.frecuency == cloned.frecuency.frecuency) || cloned.frecuencyOptions[0]
+    let selectedFrecuency = cloned.frecuencies.find(x => x.name == cloned.frecuency.name) || cloned.frecuencyOptions[0]
+
     cloned.frecuency = selectedFrecuency
-    cloned.price = selectedFrecuency.value
+    cloned.price = selectedFrecuency.price
     getDiscount(cloned)
 
     cartState.value.products.push(cloned)
@@ -1051,6 +1016,7 @@ async function addDomainExtension(extension){
 
     results.value = results.value.filter(x => x.name != extension.name)
 
+    /* gtag */    
     const items = [{
       item_id: `${mainProduct.value.id}`,
 
@@ -1104,7 +1070,7 @@ function getRenewLabel(product){
   }
 
   const price = prices[product.id] || product.price
-  return `Renuevas a ${productsHelper.valueWithSymbol(price, cartState.currency)} el  ${ calcRenovationDate(product.frecuency) } ¡Cancela cuando quieras!`
+  return `Renuevas a ${productsHelper.valueWithSymbol(price, cartState.currency)} el  ${ calcRenovationDate(product.frecuency.duration) } ¡Cancela cuando quieras!`
 }
 
 </script>

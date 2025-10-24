@@ -22,21 +22,7 @@ const helper = {
 		return options
 	},
 
-	translateFrecuencyOptionLabel(label){
-		//const { t } = useI18n()
-		const labels = {
-			'Triennially': "icommerce.frecuencies.triennially",
-			'Biennially': "icommerce.frecuencies.biennially",
-			'Annually': "icommerce.frecuencies.annually",
-			'Quarterly': "icommerce.frecuencies.quarterly",
-			'Semiannually': "icommerce.frecuencies.semiannually",
-			'Monthly': "icommerce.frecuencies.monthly",
-		}
-
-		return labels[label] || label
-
-	},
-
+	
 	/**/
 	getPrice: (product, currencyValue = 'COP') => {
 		const frecuencies = helper.getFrecuencyOptions(product)
@@ -174,7 +160,7 @@ const helper = {
 		products.forEach(product => {
 
 			if(product?.category){
-				totalNoDiscount = Number(totalNoDiscount) + Number(product?.discount?.priceByMonths || 0) + (product.price - product.frecuency.value)
+				totalNoDiscount = Number(totalNoDiscount) + Number(product?.discount?.priceByMonths || 0) + (product.price - product.frecuency.price)
 			} else {
 				totalNoDiscount = Number(totalNoDiscount) + product.price
 			}
