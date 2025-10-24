@@ -48,7 +48,7 @@
 
         <!-- delete button -->
         <q-btn
-          v-if="!product?.category"
+          v-if="!product?.categories"
           icon="fa-regular fa-trash-can"
           text-color="primary"
           size="sm"
@@ -66,13 +66,13 @@
         "
       >
         <span>
-          {{ product.name}} {{ product.externalId }}
+          {{ product.title}} :  {{ product.pid }}
         </span>
 
       </div>
       <!-- category -->
       <div
-        v-if="product?.category"
+        v-if="product?.categories"
         class="
           tw-flex
           tw-justify-between
@@ -80,7 +80,7 @@
         "
       >
         <span class="tw-text-[18px] tw-text-[#818181]">
-          {{ product.category.title}}
+          {{ product.categories[0].title}}
         </span>
       </div>
       <q-separator
@@ -632,9 +632,20 @@ function getExtPrice(ext){
 async function configProducts() {
   try {
     cartState.value.products.forEach((product) => {
-      product.price = product?.price || productsHelper.getPrice(product, cartState.value.currency)
-      if (productsHelper.hasFrencuency(product)) {
-        const options = productsHelper.getFrecuencyOptions(product)
+      product.price = product?.price || product.frecuency.price
+     
+     
+      if (product.frecuencies) {
+        
+
+         const options  = product.frecuencies.map((frecuency) => {
+          const frecuencyId = frecuency['frecuency_id']
+          return { 
+            value: frecuencyId.duration,      
+            ...frecuencyId      
+          }
+        })
+
 
         if (options.length && !product?.frecuency) {
           product.frecuency = options[0]
@@ -919,8 +930,7 @@ function getFrecuencyFromLabel(label){
   return parseInt(label.match(/\d+/)[0], 10)
 }
 
-function calcRenovationDate(frecuency){
-  console.log('=>>>', frecuency)
+function calcRenovationDate(frecuency){  
   const months = frecuency.duration
   return moment().add(months, 'months').format('DD/MM/YYYY')
 }

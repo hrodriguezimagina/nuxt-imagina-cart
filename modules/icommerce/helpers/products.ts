@@ -4,7 +4,7 @@ const helper = {
 
 	/**/
 	hasFrencuency: (product) => {
-		return product?.optionsPivot?.length || false
+		return product?.frecuencies?.length || false
 	},
 
 	/*
